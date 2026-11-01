@@ -1,8 +1,16 @@
-# Base44 Project
+# EditFlow Pro — copia privada para Claude
+
+Esta es una copia privada e independiente del repositorio original. El original permanece intacto.
+
+**Estado de esta copia:** contiene el código fuente completo de la app. La compilación del frontend termina correctamente. El build aislado no configura ni ejecuta el backend Base44, usuarios, datos, pagos, Lightroom ni proveedores de IA.
+
+**Importante:** subir cambios a este repositorio solo actualiza GitHub. No publica automáticamente en Base44 ni convierte el código en un Artifact de Claude. Para ejecutar la app completa se necesita vincular esta copia a un proyecto Base44 propio y configurar sus secretos en ese proyecto, nunca en GitHub.
+
+Para sincronizar este código desde Claude: abre el proyecto de Claude, añade contenido desde **GitHub**, selecciona `agenciakrai-hub/editflow-pro-claude` y pulsa **Sync** cuando haya cambios.
 
 Use this repository to run and edit the app locally, then publish changes back through Base44.
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
+Changes pushed here update only this GitHub repository. Publishing to a Base44 Builder requires linking this copy to a separate Base44 app.
 
 ## Prerequisites
 

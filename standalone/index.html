@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#121713" />
+  <title>EditFlow Pro · entorno local</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="#dashboard"><span class="brand-mark">EF</span><span>EditFlow <b>Pro</b><small>PHOTO WORKFLOW</small></span></a>
+      <div class="workspace"><span class="avatar">KR</span><span><b>Estudio KRAi</b><small>Espacio local</small></span><span class="chevron">⌄</span></div>
+      <nav id="nav" aria-label="Navegación principal">
+        <button data-page="dashboard" class="nav-item active"><span>▦</span> Panel</button>
+        <button data-page="projects" class="nav-item"><span>▣</span> Proyectos</button>
+        <button data-page="photos" class="nav-item"><span>▧</span> Selección de fotos <i id="nav-photo-count">0</i></button>
+        <button data-page="editor" class="nav-item"><span>◑</span> Revelado</button>
+        <button data-page="album" class="nav-item"><span>▤</span> Álbum</button>
+        <div class="nav-label">HERRAMIENTAS</div>
+        <button data-page="styles" class="nav-item"><span>✳</span> Estilos y presets</button>
+        <button data-page="lightroom" class="nav-item"><span>↗</span> Lightroom</button>
+        <button data-page="ai" class="nav-item"><span>✧</span> Selección inteligente</button>
+        <button data-page="export" class="nav-item"><span>⇧</span> Exportar</button>
+      </nav>
+      <div class="sidebar-bottom"><span class="status-dot"></span> Guardado local activo <button id="clear-data" title="Borrar los datos locales">⋯</button></div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><div class="crumb"><span>Estudio</span><span>/</span><b id="crumb-page">Panel</b></div><div class="top-actions"><span class="local-chip"><span class="status-dot"></span> Solo en este dispositivo</span><button class="icon-btn" id="help-btn" title="Acerca de esta versión">?</button><span class="avatar small">KR</span></div></header>
+      <div id="app" class="content"></div>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <dialog id="project-dialog" class="modal">
+    <form id="project-form" method="dialog">
+      <div class="modal-head"><div><div class="eyebrow">NUEVO TRABAJO</div><h2>Crear proyecto</h2></div><button class="icon-btn" type="button" data-close="project-dialog">×</button></div>
+      <label>Nombre del proyecto<input name="name" required placeholder="Ej. Boda de Ana y Luis" /></label>
+      <div class="field-row"><label>Fecha<input name="date" type="date" /></label><label>Tipo<select name="kind"><option>Boda</option><option>Retrato</option><option>Evento</option><option>Editorial</option></select></label></div>
+      <label>Lugar<input name="place" placeholder="Lugar de la sesión" /></label>
+      <div class="modal-actions"><button class="btn secondary" type="button" data-close="project-dialog">Cancelar</button><button class="btn primary" type="submit">Crear proyecto</button></div>
+    </form>
+  </dialog>
+  <dialog id="help-dialog" class="modal">
+    <div class="modal-head"><div><div class="eyebrow">ACERCA DE ESTA VERSIÓN</div><h2>EditFlow Pro local</h2></div><button class="icon-btn" data-close="help-dialog">×</button></div>
+    <p>Aplicación funcional para probar flujos fotográficos en este dispositivo. Los proyectos y fotos se guardan en el almacenamiento del navegador. No se envía información a servicios externos.</p>
+    <p>Edición y exportación JPEG usan procesamiento local. No incluye todavía autenticación multiusuario, sincronización en la nube, pagos, Lightroom ni modelos de IA externos.</p>
+    <div class="modal-actions"><button class="btn primary" data-close="help-dialog">Entendido</button></div>
+  </dialog>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

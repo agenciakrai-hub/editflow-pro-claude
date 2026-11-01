@@ -1,0 +1,293 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CheckSquare, Square, Trash2, Save, Sparkles, Wand2, Loader2, BookOpen, ArrowDownUp, Undo2, Redo2 } from "lucide-react";
+import PreviewLightbox from "./PreviewLightbox";
+import LazyPhotoCard from "./LazyPhotoCard";
+
+// Espacio de trabajo a pantalla completa para las fotos subidas al proyecto.
+// Reemplaza al PhotoFingerprintGrid + botón Guardar sueltos. Incluye:
+//  - Grid que ocupa todo el ancho disponible.
+//  - Imágenes verticales en su proporción real (object-contain, sin recorte).
+//  - Slider para aumentar/disminuir el tamaño de las cuadrículas (nº de columnas).
+//  - Selección múltiple (Seleccionar todas / individual) + botón Eliminar.
+//  - Barra lateral derecha con Guardar, Selección y Editar (con sus rutas).
+export default function ProjectPhotoWorkspace({
+  items, selectedIds, onToggleSelect, onToggleSelectMany, onToggleSelectAll, onDeleteSelected,
+  onCycleStatus, onCycleClickState, onSetRating, gridCols, onGridCols, saving, busyAction, onSave, onGoSeleccion, onGoEditar, onGoAlbum,
+  onValidatePhoto, onMarkSelected, onMarkReview,
+  aiRunning,
+  onUndo, onRedo, canUndo, canRedo,
+}) {
+  const [lightboxIndex, setLightboxIndex] = useState(null);
+  // Orden/visor de la galería. Por defecto las fotos se ordenan por HORA DE CAPTURA.
+  // «Seleccionadas»/«No seleccionadas» actúan de filtro (manteniendo el orden temporal);
+  // «Cámara» agrupa por modelo y «Nombre» ordena alfabéticamente.
+  const [viewMode, setViewMode] = useState("name");
+  const VIEW_MODES = [
+    { value: "name", label: "Nombre de la foto" },
+    { value: "capture", label: "Hora de captura" },
+    { value: "selected", label: "Fotos seleccionadas" },
+    { value: "unselected", label: "Fotos no seleccionadas" },
+    { value: "stars", label: "Fotos con estrellas" },
+    { value: "camera", label: "Cámara" },
+  ];
+  const displayed = useMemo(() => {
+    let list = [...items];
+    if (viewMode === "selected") list = list.filter((it) => selectedIds.has(it.id));
+    else if (viewMode === "unselected") list = list.filter((it) => !selectedIds.has(it.id));
+    else if (viewMode === "stars") list = list.filter((it) => (it.rating || 0) > 0);
+    // Orden temporal. Sin hora de captura (p. ej. proyectos guardados antes de leer
+    // el EXIF de las .CR3), recurre al nombre — la numeración de cámara (KRFC####) es
+    // cronológica — para que «Hora de captura» siempre dé un orden real.
+    const byName = (a, b) => a.filename.localeCompare(b.filename, "es", { numeric: true });
+    const byTime = (a, b) => {
+      const at = a.captureTime || 0;
+      const bt = b.captureTime || 0;
+      if (at && bt) return at - bt || byName(a, b);
+      if (!at && !bt) return byName(a, b);
+      return at ? -1 : 1; // la que sí tiene hora va primero; el resto al final
+    };
+    if (viewMode === "name") list.sort((a, b) => a.filename.localeCompare(b.filename, "es", { numeric: true }));
+    else if (viewMode === "camera")
+      list.sort((a, b) => (a.camera || "").localeCompare(b.camera || "") || byTime(a, b));
+    else list.sort(byTime);
+    return list;
+  }, [items, selectedIds, viewMode]);
+  const allSelected = items.length > 0 && selectedIds.size === items.length;
+  // Contadores en vivo por color: verdes = validadas (SELECT/TOP_PICK de la IA o del
+  // fotógrafo), amarillas = enviadas a revisar por la selección IA.
+  const validadasCount = items.filter(
+    (it) => it.rating === 5 || (!it.aiReview && it.rating !== 3 && (it.status === "SELECT" || it.status === "TOP_PICK"))
+  ).length;
+  const reviewCount = items.filter((it) => it.aiReview || it.rating === 3).length;
+  const cols = Math.max(2, Math.min(12, gridCols));
+  // Slider invertido: separar el control de "Tamaño" (izquierda) aumenta el tamaño
+  // de las fotos → menos columnas. valor alto del slider = menos columnas = más grande.
+  const MIN = 2, MAX = 12;
+  const sliderValue = MIN + MAX - cols;
+  // Ancla del rango Cmd/Ctrl+clic: el PRIMER cmd+clic fija el ancla y decide el
+  // modo (seleccionar si la foto estaba sin marcar, deseleccionar si estaba
+  // marcada). El SEGUNDO cmd+clic aplica ese modo a todas las fotos entre el
+  // ancla y la foto pulsada. Un clic normal (sin cmd) reinicia el ancla.
+  const rangeAnchorRef = useRef(null);
+  const rangeModeRef = useRef(null);
+
+  // Doble clic sin perder la selección: el clic simple espera unos ms antes de
+  // ciclar el estado; si llega un segundo clic (doble clic), se cancela el ciclo
+  // y se abre el visor con las fotos marcadas intactas.
+  const clickTimerRef = useRef(null);
+  useEffect(() => () => { if (clickTimerRef.current) clearTimeout(clickTimerRef.current); }, []);
+  const resetRange = () => { rangeAnchorRef.current = null; rangeModeRef.current = null; };
+
+  const handlePhotoClick = (e, item, i) => {
+    // Cmd/Ctrl+clic: selección/deselección por rango en dos pasos.
+    if (e.metaKey || e.ctrlKey) {
+      e.preventDefault();
+      if (clickTimerRef.current) { clearTimeout(clickTimerRef.current); clickTimerRef.current = null; }
+      if (rangeAnchorRef.current == null) {
+        // Primer cmd+clic: fija el ancla y alterna esta foto (selecciona si no
+        // estaba marcada, deselecciona si lo estaba). El modo se decide aquí.
+        const isSelected = selectedIds.has(item.id);
+        rangeModeRef.current = isSelected ? "deselect" : "select";
+        rangeAnchorRef.current = i;
+        onToggleSelect(item.id);
+      } else {
+        // Segundo cmd+clic: aplica el modo a todo el rango entre el ancla y esta.
+        const from = Math.min(rangeAnchorRef.current, i);
+        const to = Math.max(rangeAnchorRef.current, i);
+        const rangeIds = displayed.slice(from, to + 1).map((it) => it.id);
+        const mode = rangeModeRef.current;
+        const ids = mode === "deselect"
+          ? rangeIds.filter((id) => selectedIds.has(id))
+          : rangeIds.filter((id) => !selectedIds.has(id));
+        if (ids.length) onToggleSelectMany(ids, mode === "select");
+        resetRange();
+      }
+      return;
+    }
+    // Clic normal: reinicia el ancla del rango y cicla el estado de la foto.
+    resetRange();
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+      return;
+    }
+    const id = item.id;
+    clickTimerRef.current = setTimeout(() => {
+      clickTimerRef.current = null;
+      onCycleClickState(id);
+    }, 220);
+  };
+
+  const handlePhotoDoubleClick = (i) => {
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current);
+      clickTimerRef.current = null;
+    }
+    setLightboxIndex(i);
+  };
+
+  return (
+    <div className="flex flex-col gap-4 lg:flex-row">
+      {/* Grid a pantalla completa */}
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
+          <button
+            type="button"
+            onClick={onToggleSelectAll}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-secondary"
+          >
+            {allSelected ? <CheckSquare className="h-3.5 w-3.5 text-accent" /> : <Square className="h-3.5 w-3.5" />}
+            {allSelected ? "Quitar selección" : "Seleccionar todas"}
+          </button>
+          <span className="text-xs text-muted-foreground">
+            {items.length} fotos · {selectedIds.size} seleccionadas
+          </span>
+          <div className="flex items-center gap-2 rounded-full bg-foreground px-3 py-1.5 text-xs font-medium">
+            <span className="inline-flex items-center gap-1.5 text-green-400">
+              <span className="h-2 w-2 rounded-full bg-green-400" />
+              {validadasCount} validadas
+            </span>
+            <span className="text-background/40">·</span>
+            <span className="inline-flex items-center gap-1.5 text-yellow-400">
+              <span className="h-2 w-2 rounded-full bg-yellow-400" />
+              {reviewCount} a revisar
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <ArrowDownUp className="h-3.5 w-3.5 text-muted-foreground" />
+            <select
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value)}
+              className="rounded-md border border-border bg-background px-2 py-1.5 text-xs font-medium"
+            >
+              {VIEW_MODES.map((m) => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            onClick={onDeleteSelected}
+            disabled={selectedIds.size === 0}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/5 disabled:opacity-40"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Eliminar
+          </button>
+          <button
+            type="button"
+            onClick={() => onToggleSelectMany(Array.from(selectedIds), false)}
+            disabled={selectedIds.size === 0}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium hover:bg-secondary disabled:opacity-40"
+          >
+            <Square className="h-3.5 w-3.5" /> Deseleccionar todas
+          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onUndo}
+              disabled={!canUndo}
+              title="Deshacer (⌘Z)"
+              className="inline-flex items-center rounded-md border border-border px-2 py-1.5 text-xs font-medium hover:bg-secondary disabled:opacity-40"
+            >
+              <Undo2 className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={onRedo}
+              disabled={!canRedo}
+              title="Rehacer (⌘Y)"
+              className="inline-flex items-center rounded-md border border-border px-2 py-1.5 text-xs font-medium hover:bg-secondary disabled:opacity-40"
+            >
+              <Redo2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Tamaño</span>
+            <input
+              type="range" min={MIN} max={MAX} value={sliderValue}
+              onChange={(e) => onGridCols(MIN + MAX - Number(e.target.value))}
+              className="w-32 accent-accent"
+            />
+          </div>
+        </div>
+
+        <div
+          className="mt-3 grid gap-2"
+          style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+        >
+          {displayed.map((item, i) => (
+            <LazyPhotoCard
+              key={item.id}
+              item={item}
+              index={i}
+              checked={selectedIds.has(item.id)}
+              onToggleSelect={onToggleSelect}
+              onCycleClickState={onCycleClickState}
+              onCycleStatus={onCycleStatus}
+              onSetRating={onSetRating}
+              onPhotoClick={handlePhotoClick}
+              onPhotoDoubleClick={handlePhotoDoubleClick}
+              onRangeReset={resetRange}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Barra lateral derecha con acciones y rutas */}
+      <aside className="w-full shrink-0 lg:w-64">
+        <div className="space-y-3 rounded-lg border border-border bg-card p-4">
+          <p className="text-xs font-semibold text-muted-foreground">Acciones</p>
+          <button
+            onClick={onSave}
+            disabled={saving || aiRunning}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground disabled:opacity-40"
+          >
+            {busyAction === "save" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Guardar
+          </button>
+          <button
+            onClick={onGoSeleccion}
+            disabled={saving || aiRunning}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm font-medium hover:bg-secondary disabled:opacity-40"
+          >
+            {busyAction === "seleccion" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+            Selección inteligente
+          </button>
+          <button
+            onClick={onGoEditar}
+            disabled={saving}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm font-medium hover:bg-secondary disabled:opacity-40"
+          >
+            {busyAction === "editar" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            Editar
+          </button>
+          <button
+            onClick={onGoAlbum}
+            disabled={saving}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm font-medium hover:bg-secondary disabled:opacity-40"
+          >
+            {busyAction === "album" ? <Loader2 className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
+            Maquetar álbum
+          </button>
+          <p className="text-[11px] leading-tight text-muted-foreground">
+            «Selección inteligente» ejecuta la selección IA sobre las fotos marcadas en esta misma página. «Editar» y «Maquetar álbum» guardan el proyecto y abren la herramienta correspondiente.
+          </p>
+        </div>
+      </aside>
+
+      {lightboxIndex != null && (
+        <PreviewLightbox
+          items={displayed}
+          index={lightboxIndex}
+          onIndex={setLightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          selectedIds={selectedIds}
+          onToggleSelect={onToggleSelect}
+          onValidate={onValidatePhoto}
+          onMarkSelected={onMarkSelected}
+          onMarkReview={onMarkReview}
+        />
+      )}
+    </div>
+  );
+}

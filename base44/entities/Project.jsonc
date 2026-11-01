@@ -1,0 +1,115 @@
+{
+  "name": "Project",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "client_name": {
+      "type": "string"
+    },
+    "event_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "selection",
+        "editing",
+        "exporting",
+        "completed"
+      ],
+      "default": "draft"
+    },
+    "photo_count": {
+      "type": "number",
+      "default": 0
+    },
+    "selected_count": {
+      "type": "number",
+      "default": 0
+    },
+    "selection_saved": {
+      "type": "boolean",
+      "default": false,
+      "description": "true una vez el fot\u00f3grafo ha guardado al menos una vez la selecci\u00f3n (TOP_PICK/SELECT/REVIEW/REJECT) de este proyecto. Controla si Detalle muestra el resumen persistente o la interfaz de selecci\u00f3n."
+    },
+    "edited_count": {
+      "type": "number",
+      "default": 0
+    },
+    "cover_url": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "photos_metadata": {
+      "type": "array",
+      "description": "Metadatos por foto (sin previews ni RAW): filename, estado de selecci\u00f3n, rating, label y si se edit\u00f3.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "description": "TOP_PICK / SELECT / REVIEW / REJECT"
+          },
+          "rating": {
+            "type": "number",
+            "default": 0
+          },
+          "color_label": {
+            "type": "string"
+          },
+          "edit_applied": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "lightroom_catalog_name": {
+      "type": "string",
+      "description": "Nombre del archivo .lrcat asociado (informativo; nunca el binario)."
+    },
+    "raw_folder_path": {
+      "type": "string",
+      "description": "Nombre/ruta de la carpeta RAW asociada como string (informativo; el handle real vive en IndexedDB)."
+    },
+    "ai_config_snapshot": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Reserva para Fase futura: configuraci\u00f3n de IA usada en el proyecto."
+    },
+    "edit_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "description": "Reserva para Fase futura: historial de ediciones/exportaciones del proyecto."
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

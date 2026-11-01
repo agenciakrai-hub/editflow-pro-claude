@@ -1,0 +1,143 @@
+{
+  "name": "AlbumSpread",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "description": "Referencia al AlbumProject."
+    },
+    "order_index": {
+      "type": "number",
+      "default": 0,
+      "description": "Posici\u00f3n del lienzo en el \u00e1lbum."
+    },
+    "mode": {
+      "type": "string",
+      "enum": [
+        "spread",
+        "page_left",
+        "page_right"
+      ],
+      "default": "spread"
+    },
+    "layout_id": {
+      "type": "string",
+      "default": "custom",
+      "description": "Plantilla aplicada por \u00faltima vez ('T01'... o 'custom'). La geometr\u00eda est\u00e1 resuelta en slots, por lo que el \u00e1lbum no depende del cat\u00e1logo."
+    },
+    "locked": {
+      "type": "boolean",
+      "default": false,
+      "description": "Bloqueado frente a cambios (protege frente a la futura IA)."
+    },
+    "fill_photos": {
+      "type": "boolean",
+      "default": false,
+      "description": "Fase Rellenar contenedor \u2014 herramienta POR LIENZO: true = las fotos de ESTE lienzo se ajustan autom\u00e1ticamente a COVER (rellenar contenedor) con encuadre inteligente que prioriza las caras detectadas; false = FIT/CONTAIN (foto completa). Por defecto false: retrocompatible con \u00e1lbumes antiguos."
+    },
+    "fill_canvas": {
+      "type": "boolean",
+      "default": false,
+      "description": "Fase Relleno completo del lienzo \u2014 POR LIENZO: true = la GEOMETR\u00cdA de la plantilla de ESTE lienzo se expande para ocupar todo el lienzo (o solo su p\u00e1gina en page_left/page_right), conservando exactamente la separaci\u00f3n entre fotos; false = geometr\u00eda base de la plantilla. Por defecto false: retrocompatible con \u00e1lbumes antiguos."
+    },
+    "photo_gap_mm": {
+      "type": "number",
+      "description": "Fase 1 \u00a74 \u2014 separaci\u00f3n entre fotograf\u00edas PROPIA de ESTE lienzo (mm). null/vac\u00edo = se usa la global del \u00e1lbum (photo_gap_mm del AlbumProject), que sigue siendo la configuraci\u00f3n del \u00e1lbum. Override por lienzo: al resolver la geometr\u00eda de ESTE lienzo prevalece sobre la global; nunca afecta a otros lienzos."
+    },
+    "ai_generated": {
+      "type": "boolean",
+      "default": false,
+      "description": "Reserva fase IA: true si el lienzo naci\u00f3 de una propuesta IA."
+    },
+    "background_color": {
+      "type": "string",
+      "description": "Reserva Fase Lienzos \u2014 color de fondo espec\u00edfico de este lienzo. Vac\u00edo = se usa el global del \u00e1lbum (background_color del AlbumProject)."
+    },
+    "slots": {
+      "type": "array",
+      "description": "Huecos del lienzo con geometr\u00eda resuelta en mm y transformaciones virtuales (no destructivas).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "slot_id": {
+            "type": "string"
+          },
+          "photo_id": {
+            "type": "string",
+            "description": "Referencia a AlbumPhoto (o null si el hueco est\u00e1 vac\u00edo)."
+          },
+          "x_mm": {
+            "type": "number"
+          },
+          "y_mm": {
+            "type": "number"
+          },
+          "w_mm": {
+            "type": "number"
+          },
+          "h_mm": {
+            "type": "number"
+          },
+          "fit_mode": {
+            "type": "string",
+            "enum": [
+              "fill",
+              "fit"
+            ],
+            "default": "fit"
+          },
+          "z_index": {
+            "type": "number",
+            "default": 0
+          },
+          "transform": {
+            "type": "object",
+            "properties": {
+              "scale": {
+                "type": "number",
+                "default": 1,
+                "description": "1 = ajuste base al hueco; >1 = zoom (crop virtual)."
+              },
+              "offset_x_mm": {
+                "type": "number",
+                "default": 0,
+                "description": "Desplazamiento horizontal de la foto dentro del hueco (crop virtual)."
+              },
+              "offset_y_mm": {
+                "type": "number",
+                "default": 0
+              },
+              "rotation": {
+                "type": "number",
+                "default": 0,
+                "description": "Grados (reserva)."
+              },
+              "crop": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Crop normalizado 0..1 (reserva)."
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "project_id"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

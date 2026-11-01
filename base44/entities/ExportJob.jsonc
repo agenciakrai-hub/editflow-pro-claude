@@ -1,0 +1,56 @@
+{
+  "name": "ExportJob",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string"
+    },
+    "project_title": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "processing",
+        "completed",
+        "failed"
+      ],
+      "default": "processing"
+    },
+    "photo_count": {
+      "type": "number",
+      "default": 0
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "xmp",
+        "xml"
+      ],
+      "default": "xmp"
+    },
+    "download_url": {
+      "type": "string"
+    },
+    "xmp_preview": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "project_id"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

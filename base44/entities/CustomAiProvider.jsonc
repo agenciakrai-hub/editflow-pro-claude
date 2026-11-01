@@ -1,0 +1,178 @@
+{
+  "name": "CustomAiProvider",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre amigable del proveedor, autodetectado del dominio del endpoint."
+    },
+    "endpoint": {
+      "type": "string",
+      "description": "URL base OpenAI-compatible (sin /chat/completions). Ej: https://openrouter.ai/api/v1"
+    },
+    "api_key": {
+      "type": "string",
+      "description": "API key propia del proveedor. Si est\u00e1 vac\u00eda y hay builtin_secret, el motor usa ese secret de Base44. Nunca se devuelve al frontend (solo versi\u00f3n enmascarada)."
+    },
+    "builtin_secret": {
+      "type": "string",
+      "description": "Solo para proveedores migrados de los secrets de Base44 (GEMINI_API_KEY, QWEN_API_KEY, NVIDIA_API_KEY): si api_key est\u00e1 vac\u00eda, el motor usa este secret."
+    },
+    "available_models": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Todos los modelos detectados autom\u00e1ticamente al verificar la conexi\u00f3n (GET {endpoint}/models)."
+    },
+    "available_models_meta": {
+      "type": "array",
+      "description": "FUENTE \u00daNICA DE VERDAD de capacidades por modelo. Cada entrada: {id, caps:{vision,image_edit,video} (true|false|null), source:'declared'|'verified'|'unverified', probed_at, probe_status:'ok'|'rejected'|'error'}. vision=true \u2192 compatible con Selecci\u00f3n/Ajustes/\u00c1lbum; vision=false \u2192 verificado NO compatible (runtime bloquea); vision=null \u2190 no verificado (UI deshabilita, 'Probar capacidad' lo verifica). Resuelto por base44/shared/modelCapabilities.ts desde metadatos declarados del proveedor; la prueba emp\u00edrica ('probe-vision') actualiza source='verified'.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "caps": {
+            "type": "object",
+            "properties": {
+              "vision": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "image_edit": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "video": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            }
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "declared",
+              "verified",
+              "unverified"
+            ]
+          },
+          "probed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "probe_status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "rejected",
+              "error"
+            ]
+          }
+        }
+      }
+    },
+    "seleccion_models": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Modelos que el administrador marc\u00f3 para Selecci\u00f3n IA. Los motores usan EXCLUSIVAMENTE esta lista (o el modelo legado como fallback)."
+    },
+    "ajustes_models": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Modelos que el administrador marc\u00f3 para Ajustes IA (ajustes b\u00e1sicos). Los motores usan EXCLUSIVAMENTE esta lista (o el modelo legado como fallback)."
+    },
+    "album_models": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Modelos que el administrador marc\u00f3 para la herramienta \u00c1LBUM (selecci\u00f3n de fotos + maquetaci\u00f3n de lienzos de EditFlow Album AI). El motor de \u00e1lbum usa EXCLUSIVAMENTE esta lista cuando el proveedor est\u00e1 activo para \u00c1lbum (o el modelo legado como fallback)."
+    },
+    "edicion_models": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Modelos que el administrador marc\u00f3 para EDICI\u00d3N de imagen (image-edit / generaci\u00f3n de p\u00edxeles) en la pesta\u00f1a Edici\u00f3n del proveedor. Reserva para las herramientas de edici\u00f3n."
+    },
+    "video_models": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Modelos que el administrador marc\u00f3 para V\u00cdDEO (generaci\u00f3n / edici\u00f3n de v\u00eddeo) en la pesta\u00f1a V\u00eddeo del proveedor. Reserva para las herramientas de v\u00eddeo."
+    },
+    "model": {
+      "type": "string",
+      "description": "Legado V1: modelo \u00fanico de visi\u00f3n. Solo se usa como fallback si no hay modelos marcados para la tarea."
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "last_ok": {
+      "type": "boolean",
+      "default": false
+    },
+    "last_reason": {
+      "type": "string"
+    },
+    "last_checked": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "free_quota_only": {
+      "type": "boolean",
+      "default": false
+    },
+    "free_quota_models": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "free_quota_until": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "name",
+    "endpoint"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "name": "AiProviderConfig",
+  "type": "object",
+  "properties": {
+    "qwen_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "qwen_endpoint": {
+      "type": "string",
+      "description": "URL base OpenAI-compatible de DashScope (sin /chat/completions). Ej: https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    },
+    "qwen_model": {
+      "type": "string",
+      "default": "qwen3-vl-plus",
+      "description": "Modelo multimodal de Qwen que admite entrada de imagenes. Ej: qwen3-vl-plus, qwen-vl-max."
+    },
+    "nvidia_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "nvidia_endpoint": {
+      "type": "string",
+      "default": "https://integrate.api.nvidia.com/v1",
+      "description": "URL base OpenAI-compatible de NVIDIA NIM (sin /chat/completions)."
+    },
+    "nvidia_model": {
+      "type": "string",
+      "default": "minimaxai/minimax-m3",
+      "description": "Modelo VLM de NVIDIA NIM. Ej: minimaxai/minimax-m3."
+    },
+    "gemini_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Proveedor Google Gemini (generativelanguage). Enruta previews como data URLs directas, sin UploadFile ni InvokeLLM."
+    },
+    "gemini_endpoint": {
+      "type": "string",
+      "default": "https://generativelanguage.googleapis.com/v1beta",
+      "description": "URL base de la API Gemini (sin /models/...)."
+    },
+    "gemini_model": {
+      "type": "string",
+      "default": "gemini-2.5-flash",
+      "description": "Modelo multimodal de Gemini. Único modelo admitido: gemini-2.5-flash."
+    },
+    "base44_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "active_seleccion": {
+      "type": "string",
+      "default": "base44",
+      "description": "Proveedor activo para Seleccion IA. Uno de: base44, none, o custom:<id> para un proveedor de la base de datos."
+    },
+    "active_ajustes": {
+      "type": "string",
+      "default": "base44",
+      "description": "Proveedor activo para Ajustes IA. Uno de: custom:<id>, o valores legados (base44, qwen, nvidia, gemini, none)."
+    },
+    "active_model_seleccion": {
+      "type": "string",
+      "description": "Modelo EXACTO para Selección IA dentro del proveedor activo (custom:<id>): los motores lo usan SIEMPRE, sin heurística. Debe pertenecer a la lista marcada (seleccion_models) del proveedor activo. Vacío = automático (mejor modelo marcado)."
+    },
+    "active_model_ajustes": {
+      "type": "string",
+      "description": "Modelo EXACTO para Ajustes IA (IA Visual e Híbrido) dentro del proveedor activo (custom:<id>): ambos modos lo usan SIEMPRE, sin heurística ni sustituciones. Debe pertenecer a la lista marcada (ajustes_models) del proveedor activo. Vacío = automático (mejor modelo marcado)."
+    },
+    "active_album": {
+      "type": "string",
+      "default": "",
+      "description": "Proveedor activo para la herramienta ÁLBUM (selección de fotos + maquetación de lienzos de EditFlow Album AI). Vacío = cadena por defecto de Album AI (gemini_paid → qwen → nvidia). También: gemini_paid, qwen, nvidia o custom:<id> de CustomAiProvider. El activo se usa PRIMERO; si falla, la cadena de Album AI continúa (failover)."
+    },
+    "active_model_album": {
+      "type": "string",
+      "description": "Modelo EXACTO para Álbum dentro del proveedor activo: el motor lo usa SIEMPRE para el proveedor activo. Para proveedores propios debe pertenecer a album_models del proveedor. Vacío = automático (mejor modelo marcado o modelo por defecto del proveedor)."
+    },
+    "active_video_chain": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Cadena ordenada de proveedores para Vídeo (EMOTIVE FILM IA). Cada entrada es un valor de proveedor (custom:<id>, qwen, nvidia, gemini, base44). El motor intenta el PRIMERO; si falla (todos sus modelos), salta al SIGUIENTE. Por defecto se seleccionan 3 proveedores. Vacío = usa el proveedor activo de Selección IA como fallback."
+    },
+    "active_model_video": {
+      "type": "string",
+      "description": "Modelo EXACTO para Vídeo dentro del proveedor PRIMARIO de la cadena (el primero de active_video_chain). Debe pertenecer a la lista marcada (video_models) de ese proveedor. Vacío = automático (mejor modelo marcado de vídeo). Los demás proveedores de la cadena usan auto."
+    },
+    "builtin_migrated": {
+      "type": "boolean",
+      "default": false,
+      "description": "true tras migrar los proveedores integrados (Gemini/Qwen/NVIDIA) a filas de CustomAiProvider. Evita recrearlos si el administrador los borra."
+    },
+    "model_defaults_policy": {
+      "type": "string",
+      "description": "verified-three-v1 limita la recuperación automática a tres modelos marcados, sin descubrir modelos adicionales y con presupuesto total acotado."
+    }
+  },
+  "required": [
+    "active_seleccion",
+    "active_ajustes"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

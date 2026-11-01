@@ -1,0 +1,159 @@
+{
+  "name": "AlbumProject",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre del \u00e1lbum."
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "wedding",
+        "communion",
+        "baptism",
+        "family",
+        "event",
+        "other"
+      ],
+      "default": "other",
+      "description": "Tipo de reportaje (para futura narrativa IA)."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "imported",
+        "designing",
+        "reviewed",
+        "final"
+      ],
+      "default": "draft",
+      "description": "Estado del \u00e1lbum."
+    },
+    "width_mm": {
+      "type": "number",
+      "description": "Ancho del lienzo completo en mm (can\u00f3nico)."
+    },
+    "height_mm": {
+      "type": "number",
+      "description": "Alto del lienzo en mm (can\u00f3nico)."
+    },
+    "dpi": {
+      "type": "number",
+      "default": 300,
+      "description": "DPI de renderizado del \u00e1lbum."
+    },
+    "bleed_mm": {
+      "type": "number",
+      "default": 3
+    },
+    "margin_mm": {
+      "type": "number",
+      "default": 10
+    },
+    "gutter_mm": {
+      "type": "number",
+      "default": 6,
+      "description": "Legado (pliego doble p\u00e1gina): separaci\u00f3n central entre p\u00e1ginas. Las plantillas actuales usan photo_gap_mm como espacio entre fotos."
+    },
+    "photo_gap_mm": {
+      "type": "number",
+      "default": 0,
+      "description": "Fase Lienzos \u2014 espacio visual entre fotograf\u00edas (mm) que el motor aplica DIN\u00c1MICAMENTE al resolver cualquier plantilla. No est\u00e1 fijado en las plantillas: al cambiarlo, la geometr\u00eda de los lienzos con plantilla se recalcula."
+    },
+    "background_color": {
+      "type": "string",
+      "default": "#FFFFFF",
+      "description": "Fase Lienzos \u2014 color de fondo del lienzo (configuraci\u00f3n global del \u00e1lbum, visible al instante en el editor)."
+    },
+    "photo_folders": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fase Carpetas \u2014 nombres de las carpetas de organizaci\u00f3n creadas por el usuario en el navegador de fotos (organizaci\u00f3n virtual: cada foto guarda su carpeta en el campo 'folder')."
+    },
+    "size_preset": {
+      "type": "string",
+      "default": "custom",
+      "description": "Id del preset de tama\u00f1o ('30x30', ... o 'custom')."
+    },
+    "display_unit": {
+      "type": "string",
+      "enum": [
+        "cm",
+        "mm"
+      ],
+      "default": "cm",
+      "description": "Unidad de muestra preferida por el fot\u00f3grafo (almacenamiento siempre en mm)."
+    },
+    "spread_count_target": {
+      "type": "number",
+      "default": 20,
+      "description": "N\u00famero aproximado de lienzos (gu\u00eda para futura IA, no l\u00edmite)."
+    },
+    "max_photos_per_spread": {
+      "type": "number",
+      "default": 6
+    },
+    "style_hint": {
+      "type": "string",
+      "enum": [
+        "minimal",
+        "editorial",
+        "classic",
+        "modern"
+      ],
+      "default": "minimal"
+    },
+    "source_folder_name": {
+      "type": "string",
+      "description": "Nombre de la carpeta importada (informativo)."
+    },
+    "doc_version": {
+      "type": "string",
+      "default": "v1",
+      "description": "Versi\u00f3n del esquema .editflowalbum."
+    },
+    "auto_layout_max_spreads": {
+      "type": "number",
+      "default": 20,
+      "description": "Asistencia IA \u2014 M\u00c1XIMO TOTAL de lienzos del \u00e1lbum (no de lienzos nuevos). La IA solo puede crear lienzos adicionales hasta alcanzar este l\u00edmite. Los lienzos bloqueados cuentan para el total. Se guarda y recupera al reabrir el \u00e1lbum."
+    },
+    "auto_layout_max_photos_per_spread": {
+      "type": "number",
+      "default": 6,
+      "description": "Asistencia IA \u2014 techo de fotos por plantilla/lienzo. Deriva del cat\u00e1logo real (m\u00e1x. 12 en T23)."
+    },
+    "auto_layout_priority": {
+      "type": "string",
+      "enum": [
+        "balanced",
+        "morePhotos",
+        "moreSpace"
+      ],
+      "default": "balanced",
+      "description": "Asistencia IA \u2014 prioridad de reparto: balanced (equilibrado), morePhotos (m\u00e1s fotos por lienzo), moreSpace (m\u00e1s espacio por foto)."
+    }
+  },
+  "required": [
+    "name",
+    "width_mm",
+    "height_mm"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "name": "AlbumPhoto",
+  "type": "object",
+  "properties": {
+    "project_id": {
+      "type": "string",
+      "description": "Referencia al AlbumProject."
+    },
+    "filename": {
+      "type": "string"
+    },
+    "relative_path": {
+      "type": "string",
+      "description": "Ruta relativa dentro de la carpeta importada."
+    },
+    "folder": {
+      "type": "string",
+      "description": "Fase Carpetas \u2014 carpeta de organizaci\u00f3n dentro del \u00e1lbum (p. ej. 'Ceremonia'). Es SOLO una etiqueta virtual del navegador de fotos: nunca se mueven ni duplican los archivos originales. Vac\u00edo = sin carpeta (visible en 'Todas')."
+    },
+    "orientation": {
+      "type": "string",
+      "enum": [
+        "landscape",
+        "portrait",
+        "square"
+      ],
+      "default": "landscape",
+      "description": "Derivada de las dimensiones reales del archivo."
+    },
+    "capture_time": {
+      "type": "number",
+      "description": "Epoch ms (para orden temporal y futura narrativa IA)."
+    },
+    "preview_status": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "missing",
+        "unlinked"
+      ],
+      "default": "ok",
+      "description": "ok = preview disponible / \u00faltimo enlace correcto; missing = preview no disponible en este dispositivo; unlinked = se confirm\u00f3 que el archivo original no est\u00e1 (el spread conserva su geometr\u00eda)."
+    },
+    "file_size": {
+      "type": "number",
+      "description": "Fase 3.1 \u2014 identidad L1: tama\u00f1o del archivo original en bytes. Opcional (fotos v1 no lo tienen)."
+    },
+    "content_hash": {
+      "type": "string",
+      "description": "Fase 3.1 \u2014 identidad L2: SHA-256 exacto del archivo, calculado en el navegador. Opcional."
+    },
+    "phash": {
+      "type": "string",
+      "description": "Fase 3.1 \u2014 identidad L3: hash perceptual de 64 bits de la preview (para re-localizaci\u00f3n difusa con confirmaci\u00f3n manual). Opcional."
+    },
+    "width_px": {
+      "type": "number",
+      "description": "Fase 3.1 \u2014 identidad L4: anchura real de la imagen en p\u00edxeles. Opcional."
+    },
+    "height_px": {
+      "type": "number",
+      "description": "Fase 3.1 \u2014 identidad L4: altura real de la imagen en p\u00edxeles. Opcional."
+    },
+    "ai_state": {
+      "type": "string",
+      "enum": [
+        "recommended",
+        "considered",
+        "discarded",
+        "unreviewed"
+      ],
+      "default": "unreviewed",
+      "description": "Nivel IA (fase futura). El fot\u00f3grafo puede usar cualquier foto siempre."
+    },
+    "ai_override": {
+      "type": "string",
+      "enum": [
+        "none",
+        "forced",
+        "blocked"
+      ],
+      "default": "none",
+      "description": "Fase 4.1 Bloque 10 \u2014 override del fot\u00f3grafo con JERARQU\u00cdA sobre la IA: forced = incluir siempre (viaja a E7 como restricci\u00f3n); blocked = excluir siempre. La IA jam\u00e1s sobrescribe estos valores."
+    },
+    "ai_rank": {
+      "type": "number",
+      "description": "Reserva fase IA."
+    },
+    "ai_scores": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Reserva fase IA (nitidez, expresi\u00f3n, etc.)."
+    },
+    "ai_category": {
+      "type": "string",
+      "description": "Reserva fase IA (categor\u00eda narrativa)."
+    }
+  },
+  "required": [
+    "project_id",
+    "filename"
+  ],
+  "rls": {
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

@@ -1,0 +1,48 @@
+import assert from 'node:assert/strict';
+import {build} from 'esbuild';
+const r=await build({stdin:{contents:`export {adaptPhotoWithProfile,buildHybridReference,needsHybridVisualReview,hybridValidationKey,validatedHybridSample} from './src/lib/rawaistudio/hybridAdaptEngine.js';export {computeWhiteBalance} from './src/lib/rawaistudio/whiteBalanceEngine.js';export {writeWhiteBalance,patchXmpAttributes,prepareBasicCorrectionTemplate} from './src/lib/rawaistudio/xmpTagPatcher.js';`,resolveDir:process.cwd()},bundle:true,platform:'node',format:'esm',write:false});
+const m=await import('data:text/javascript;base64,'+Buffer.from(r.outputFiles[0].text).toString('base64'));
+const stats={p1:10,p5:30,p25:65,p50:80,p75:95,p95:180,p99:220,clipHighlightPct:0,clipShadowPct:0};
+const profile={base_recipe:{Exposure2012:0.4},technical_reference:m.buildHybridReference([stats,stats])};
+assert.equal(m.adaptPhotoWithProfile(stats,profile,'balanced',{},['Exposure2012']).values.Exposure2012,0.4);
+assert.equal(m.adaptPhotoWithProfile(stats,profile,'balanced',{Exposure2012:0.2},['Exposure2012']).values.Exposure2012,0.6000000000000001);
+assert.ok(m.adaptPhotoWithProfile(stats,{...profile,base_recipe:{Exposure2012:-1}},'balanced',{},['Exposure2012']).values.Exposure2012>0);
+const neutral={neutralMeanRgb:{r:150,g:170,b:150},neutralConfidence:0.9};
+const wb=m.computeWhiteBalance(null,neutral,{kelvin:5500,tint:4,source:'verified'});
+assert.ok(wb.tintDelta>0,'green cast must move tint towards magenta');
+assert.equal(m.computeWhiteBalance(null,neutral,{kelvin:5500,tint:null,source:'dng-AsShotWhiteXY'}).write,false);
+assert.equal(m.computeWhiteBalance(null,neutral,{kelvin:5500,tint:0,source:'dng-AsShotNeutral'}).write,false);
+assert.equal(m.computeWhiteBalance({channels:{r:{p95:150,clipPct:0},g:{p95:210,clipPct:0},b:{p95:140,clipPct:0}}},null,{kelvin:5500,tint:4}).write,false);
+const x='<rdf:Description rdf:about="" xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/" />';
+assert.match(m.writeWhiteBalance(m.patchXmpAttributes(x,{Exposure2012:0.4}),wb),/Exposure2012="\+0.40"/);
+assert.match(m.writeWhiteBalance(x,wb),new RegExp(`Tint="${wb.finalTint}"`));
+console.log('PASS hybrid reference, exposure direction, preferences once, WB direction and unknown baseline, XMP values');
+
+const autoWb=m.adaptPhotoWithProfile(stats,profile,'balanced',{},['Temperature','Tint']).wb;
+assert.equal(autoWb.auto,true);
+const autoXmp=m.writeWhiteBalance('<rdf:Description rdf:about="" xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/" crs:Temperature="2500" crs:Tint="-30"/>',autoWb);
+assert.match(autoXmp,/WhiteBalance="Auto"/);assert.doesNotMatch(autoXmp,/crs:(Temperature|Tint)=/);
+console.log('PASS: Lightroom RAW automatic WB without guessed Kelvin or stale preset values');
+
+assert.equal(m.needsHybridVisualReview({p25:59,p95:250}),true);
+assert.equal(m.needsHybridVisualReview({p25:110,p95:200}),true);
+assert.equal(m.needsHybridVisualReview({p25:58,p95:225}),true, 'DSCF0212 must not bypass individual review at the old histogram boundary');
+assert.equal(m.needsHybridVisualReview({p25:120,p95:180}),true, 'a balanced histogram cannot prove subject exposure');
+assert.match(m.hybridValidationKey('balanced',{},[],''), /individual-v2/, 'old heuristic samples must not qualify for reuse');
+const preset='<rdf:Description rdf:about="" xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/" crs:Exposure2012="-2" crs:Temperature="2500" crs:Tint="-50" crs:SaturationAdjustmentRed="-11"><crs:MaskGroupBasedCorrections><rdf:Seq><rdf:li><rdf:Description crs:LocalExposure2012="-0.4"/></rdf:li></rdf:Seq></crs:MaskGroupBasedCorrections><crs:ToneCurvePV2012><rdf:Seq><rdf:li>0, 0</rdf:li></rdf:Seq></crs:ToneCurvePV2012></rdf:Description>';
+const clean=m.prepareBasicCorrectionTemplate(preset);
+assert.doesNotMatch(clean,/Exposure2012|Temperature|Tint|MaskGroupBasedCorrections|LocalExposure/);
+assert.match(clean,/SaturationAdjustmentRed="-11"/);assert.match(clean,/ToneCurvePV2012/);
+assert.match(m.patchXmpAttributes(clean,{Exposure2012:0.5}),/Exposure2012="\+0.50"/);
+const b=await build({stdin:{contents:`export {utf8Base64} from './base44/shared/utf8Base64.ts';`,resolveDir:process.cwd()},bundle:true,platform:'node',format:'esm',write:false});
+const utf=await import('data:text/javascript;base64,'+Buffer.from(b.outputFiles[0].text).toString('base64'));
+const xml='<crs:CorrectionName>Máscara · edición</crs:CorrectionName>';
+assert.equal(Buffer.from(utf.utf8Base64(xml),'base64').toString('utf8'),xml);
+console.log('PASS: backlight visual review, preset isolates basic settings and masks, preserves style, UTF-8 plugin sidecars');
+
+const key=m.hybridValidationKey('balanced',{},['Exposure2012'],'preset4');
+const approved={id:'L1047705',values:{Exposure2012:0.65},wb:{auto:true,write:true}};
+assert.equal(m.validatedHybridSample('L1047705',{validation_key:key},[approved],key),approved);
+assert.equal(m.validatedHybridSample('L1047705',{validation_key:key},[approved],m.hybridValidationKey('balanced',{Exposure2012:0.2},['Exposure2012'],'preset4')),null);
+assert.equal(m.validatedHybridSample('other',{validation_key:key},[approved],key),null);
+console.log('PASS: confirmed sample reuses reviewed values, configuration changes invalidate cache');

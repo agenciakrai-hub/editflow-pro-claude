@@ -1,0 +1,34 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user"
+    },
+    "plan": {
+      "type": "string",
+      "enum": [
+        "none",
+        "starter",
+        "pro",
+        "studio"
+      ],
+      "default": "none"
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "active",
+        "canceled",
+        "expired"
+      ],
+      "default": "none"
+    }
+  }
+}
